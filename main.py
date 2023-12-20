@@ -4,11 +4,16 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from weather_api_handler import BaseRequest
 import json
 from user_response_handler import UserResponseHandler
-from db_orm import DBUser, DBClient, add_new_unique_user
+from db_orm import add_new_unique_user, add_users_request
+from db_client import DBClient
+from base_log import LoggerHand
 
 # Создание экземпляра клиента базы данных и sqlalchemy_engine
 db_client: DBClient = DBClient()
 db_engine = db_client.create_sql_alchemy_engine()
+
+# Создание логгера
+log = LoggerHand(__name__, f"loggers/{__name__}.log")
 
 with open('credentials/bot_verification.json', 'r') as file:
     bot_credentials: dict = json.load(file)
@@ -35,7 +40,7 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     resp_hand: UserResponseHandler = UserResponseHandler(update.message)
     request = BaseRequest()
     func_args: Union[None, dict] = resp_hand.transform_msg_com()
-    print(update.message.from_user)
+    add_users_request(update, db_engine, func_args)
     if func_args:
         response: dict = request.get_response(func_args.get('first_arg'), func_args.get('second_arg')).json()
         current: dict = response.get('current')
@@ -76,7 +81,6 @@ def handle_responses(user_response: str) -> str:
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message_type: str = update.message.chat.type
     message_text: str = update.message.text
-
     print(f"User: {update.message.chat.id} in {message_type}: {message_text}")
     if message_type == 'group':
         if BOT_USERNAME in message_text:

@@ -1,5 +1,8 @@
 from sqlalchemy import create_engine
 import json
+from base_log import LoggerHand
+
+log = LoggerHand(__name__, f"loggers/{__name__}.log")
 
 
 class DBClient:
@@ -12,4 +15,5 @@ class DBClient:
 
     def create_sql_alchemy_engine(self):
         db_engine = create_engine(f"postgresql://{self.user}:{self.password}@localhost/{self.db_name}")
+        log.logger.debug(f"SQL alchemy engine for DB: {self.db_name}, user: {self.user} has been created")
         return db_engine

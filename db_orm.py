@@ -1,21 +1,27 @@
-from sqlalchemy import ForeignKey, String, Column, Integer, DateTime, Boolean, Numeric, Text, JSON
+from sqlalchemy import ForeignKey, String, Column, Integer, DateTime, Boolean, Text, JSON
 from sqlalchemy.orm import relationship, declarative_base, Session
-from db_client import DBClient
-from telegram import User
+from telegram import User, Update
+from datetime import datetime
+from base_log import LoggerHand
+
+log = LoggerHand(__name__, f"loggers/{__name__}.log")
 
 Base = declarative_base()
 
 
 class DBUser(Base):
     __tablename__: str = 'users'
-    user_id_1: Column = Column(String(200), primary_key=True)
+    user_id: Column = Column(String(200), primary_key=True)
     username: Column = Column(String(100), nullable=False)
     first_name: Column = Column(String(200), nullable=True)
     last_name: Column = Column(String(200), nullable=True)
     is_bot: Column = Column(Boolean, nullable=False)
     language_code: Column = Column(String(10), nullable=False)
 
-    user_requests = relationship('user_requests')
+    user_requests = relationship('UserRequest')
+
+    def __str__(self):
+        return f"username: {self.username}, user_id: {self.user_id}"
 
 
 class UserRequest(Base):
@@ -25,7 +31,10 @@ class UserRequest(Base):
     com_type: Column = Column(String(100), nullable=True)
     com_args: Column = Column(JSON, nullable=True)
     msg_time: Column = Column(DateTime, nullable=False)
-    user_id_2: Column = Column(String(200), ForeignKey('users.user_id_1'))
+    user_id: Column = Column(String(200), ForeignKey('users.user_id'))
+
+    def __str__(self):
+        return f"msg: {self.msg_txt} from user: {self.user_id}"
 
 
 def add_new_unique_user(msg_user: User, engine):
@@ -37,6 +46,18 @@ def add_new_unique_user(msg_user: User, engine):
         if query_res is None:
             db_session.add(db_user)
             db_session.commit()
+            log.logger.debug(f"New user has been inserted into the users: {db_user}")
+    return None
+
+
+def add_users_request(msg: Update, engine, func_args: dict):
+    db_user_request = UserRequest(msg_txt=msg.message.text, com_type=func_args.get('com_type'),
+                                  com_args=func_args, msg_time=datetime.now(),
+                                  user_id=msg.message.from_user.id)
+    with Session(engine) as db_session:
+        db_session.add(db_user_request)
+        db_session.commit()
+        log.logger.debug(f"New user msg has been inserted into the users_requests: {db_user_request}")
     return None
 
 
