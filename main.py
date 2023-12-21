@@ -1,7 +1,9 @@
 from typing import Final, Union
+
+import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from weather_api_handler import BaseRequest
+from weather_api_handler import BaseRequest, ResponseFormatter
 import json
 from user_response_handler import UserResponseHandler
 from db_orm import add_new_unique_user, add_users_request
@@ -42,18 +44,14 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     func_args: Union[None, dict] = resp_hand.transform_msg_com()
     add_users_request(update, db_engine, func_args)
     if func_args:
-        response: dict = request.get_response(func_args.get('first_arg'), func_args.get('second_arg')).json()
-        current: dict = response.get('current')
-        location: dict = response.get('location')
-        temp_c: float = current.get('temp_c')
-        cond: str = current.get('condition').get('text')
-        wind_vel: float = current.get('wind_kph')
-        city: str = location.get('name')
-        region: str = location.get('region')
-        country: str = location.get('country')
-        await update.message.reply_text(f"Today in {city}, {region}, {country} you can see a {cond}. "
-                                        f"The temperature is {temp_c} C degrees, "
-                                        f"the velocity of wind is {wind_vel} km/h.")
+        response: requests.Response = request.get_response(func_args.get('first_arg'),
+                                                           func_args.get('second_arg'), func_args.get('third_arg'))
+        api_response_formatter = ResponseFormatter(response, func_args.get('first_arg'))
+        answer: str = api_response_formatter.answer
+        if isinstance(answer, str):
+            await update.message.reply_text(answer)
+        else:
+            await update.message.reply_text(f'Something must be wrong with the server. Please try again')
     else:
         await update.message.reply_text('Please explain yourself in more comprehensible expressions')
 
@@ -61,19 +59,8 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Responses
 def handle_responses(user_response: str) -> str:
     user_response: str = user_response.lower()
-    if 'hello' in user_response:
+    if 'hello' or 'hey' or 'привет' in user_response:
         return 'Hello you there!'
-    elif user_response == 'weather now rostov':
-        request = BaseRequest()
-        location: str = 'Rostov-On-Don'
-        response: dict = request.get_response('current', location).json()
-        print(response)
-        current: dict = response.get('current')
-        temp_c: float = current.get('temp_c')
-        cond: str = current.get('condition').get('text')
-        wind_vel: float = current.get('wind_kph')
-        return f"Today in {location} you can see a {cond}. The temperature is {temp_c} C degrees, " \
-               f"the velocity of wind is {wind_vel} km/h."
     else:
         return 'Please explain yourself in more comprehensible expressions'
 
@@ -90,16 +77,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
     else:
         response: str = handle_responses(message_text)
-    # print(f'Bots response {response}')
     await update.message.reply_text(response)
 
 
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"Update caused the following error: {context.error}")
+    log.logger.error(f"Update caused the following error: {context.error}")
 
 
 if __name__ == '__main__':
-    print('Starting bot')
+    log.logger.debug('Starting bot')
     app = Application.builder().token(TOKEN).build()
 
     # Commands
