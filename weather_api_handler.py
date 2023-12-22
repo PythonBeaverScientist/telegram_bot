@@ -100,5 +100,5 @@ class ResponseFormatter:
         for dt_info in self.to_user.get('dt_lst'):
             msg_for_user += f"date: {dt_info.get('date')},\tmax_temp: {dt_info.get('max_temp')},\t" \
                             f"min_temp: {dt_info.get('min_temp')},\tavg_temp: {dt_info.get('avg_temp')}\t" \
-                            f"max_wind: {dt_info.get('max_wind')},\tcond: {dt_info.get('cond')}\n"
+                            f"max_wind: {dt_info.get('max_wind')},\tcondition: {dt_info.get('cond')}\n"
         return msg_for_user

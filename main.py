@@ -34,6 +34,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('This will be some useful information in the future!')
 
 
+async def get_id_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f"Your id is: {update.message.from_user.id}")
+
+
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('This will be some useful information in the future!')
 
@@ -91,6 +95,7 @@ if __name__ == '__main__':
     # Commands
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
+    app.add_handler(CommandHandler('get_id', get_id_command))
     app.add_handler(CommandHandler('custom', custom_command))
     app.add_handler(CommandHandler('weather', weather_command))
 
