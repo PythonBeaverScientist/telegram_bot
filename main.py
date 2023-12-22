@@ -1,14 +1,18 @@
 from typing import Final, Union
-
+import json
 import requests
+import asyncio
+
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
 from weather_api_handler import BaseRequest, ResponseFormatter
-import json
 from user_response_handler import UserResponseHandler
 from db_orm import add_new_unique_user, add_users_request
 from db_client import DBClient
 from base_log import LoggerHand
+from dictionary_api_handler import DictionaryRequest, DefinitionFormatter, MsgCreator
+# from command_handler import word_def_logic
 
 # Создание экземпляра клиента базы данных и sqlalchemy_engine
 db_client: DBClient = DBClient()
@@ -60,6 +64,24 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text('Please explain yourself in more comprehensible expressions')
 
 
+async def word_def_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    resp_hand: UserResponseHandler = UserResponseHandler(update.message)
+    en_word: str = resp_hand.transform_com_word_def()
+    def_req = DictionaryRequest()
+    get_text_task = asyncio.create_task(def_req.get_response(en_word))
+    def_res = await get_text_task
+    def_for = DefinitionFormatter(def_res)
+    json_answer = await asyncio.create_task(def_for.format_definition_response())
+    wrd_lst = def_for.edit_definition_json(json_answer)
+    get_audio_task = asyncio.create_task(def_req.get_audio(wrd_lst[0].audio_http))
+    audio_res = await get_audio_task
+    audio_file_path = await asyncio.create_task(def_for.load_audio_req(audio_res, wrd_lst[0].audio_http))
+    msg_creator: MsgCreator = MsgCreator(wrd_lst, audio_file_path)
+    msg_for_user = msg_creator.create_msg_for_user()
+    await def_req.close_session()
+    await update.message.reply_text(msg_for_user)
+
+
 # Responses
 def handle_responses(user_response: str) -> str:
     user_response: str = user_response.lower()
@@ -98,6 +120,7 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('get_id', get_id_command))
     app.add_handler(CommandHandler('custom', custom_command))
     app.add_handler(CommandHandler('weather', weather_command))
+    app.add_handler(CommandHandler('en_word', word_def_command))
 
     # Messages
     app.add_handler(MessageHandler(filters.TEXT, handle_message))

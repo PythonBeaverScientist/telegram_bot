@@ -3,7 +3,6 @@ from base_log import LoggerHand
 import re
 
 log = LoggerHand(__name__, f"loggers/{__name__}.log")
-re.IGNORECASE = True
 
 
 class UserResponseHandler:
@@ -33,3 +32,9 @@ class UserResponseHandler:
             return {'com_type': com_type, 'first_arg': first_arg, 'second_arg': second_arg, 'third_arg': third_arg}
         else:
             return None
+
+    def transform_com_word_def(self) -> str:
+        msg_text: str = self.resp_msg.text
+        command_pattern: str = r'(?P<com_type>\/\w+)\s+(?P<first_arg>\w+)'
+        en_word: str = re.search(command_pattern, msg_text).group('first_arg')
+        return en_word
