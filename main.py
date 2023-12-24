@@ -67,6 +67,7 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def word_def_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     resp_hand: UserResponseHandler = UserResponseHandler(update.message)
     en_word: str = resp_hand.transform_com_word_def()
+    user_msg_model = add_users_request(update, db_engine, {'en_word': en_word})
     def_req = DictionaryRequest()
     get_text_task = asyncio.create_task(def_req.get_response(en_word))
     def_res = await get_text_task
@@ -75,11 +76,13 @@ async def word_def_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     wrd_lst = def_for.edit_definition_json(json_answer)
     get_audio_task = asyncio.create_task(def_req.get_audio(wrd_lst[0].audio_http))
     audio_res = await get_audio_task
-    audio_file_path = await asyncio.create_task(def_for.load_audio_req(audio_res, wrd_lst[0].audio_http))
+    audio_file_path = await asyncio.create_task(def_for.load_audio_req(audio_res, en_word))
     msg_creator: MsgCreator = MsgCreator(wrd_lst, audio_file_path)
-    msg_for_user = msg_creator.create_msg_for_user()
+    msg_for_user = msg_creator.create_msg_for_user(user_msg_model, db_engine)
     await def_req.close_session()
+    audio: bytes = msg_creator.read_audio_file(audio_file_path)
     await update.message.reply_text(msg_for_user)
+    await update.message.reply_audio(audio=audio, title=f"{en_word}.mp3")
 
 
 # Responses
