@@ -58,11 +58,13 @@ class DefinitionFormatter:
             word_lst: list = []
             for word in json_res:
                 user_word: str = word.get('word')
-                audio_http: str = word.get('phonetics')[0].get('audio')
-                if audio_http == "" and len(word.get('phonetics')) > 1:
-                    audio_http: str = word.get('phonetics')[1].get('audio')
-                    if audio_http == "" and len(word.get('phonetics')) > 2:
-                        audio_http: str = word.get('phonetics')[2].get('audio')
+                audio_http = ''
+                if len(word.get('phonetics')) > 0:
+                    audio_http: str = word.get('phonetics')[0].get('audio')
+                    if audio_http == "" and len(word.get('phonetics')) > 1:
+                        audio_http: str = word.get('phonetics')[1].get('audio')
+                        if audio_http == "" and len(word.get('phonetics')) > 2:
+                            audio_http: str = word.get('phonetics')[2].get('audio')
                 for meaning in word.get('meanings'):
                     part_of_speech: str = meaning.get('partOfSpeech')
                     for definition in meaning.get('definitions'):
@@ -86,7 +88,7 @@ class DefinitionFormatter:
 
 
 class MsgCreator:
-    def __init__(self, word_lst: List[WordDef],  audio_file_path: str):
+    def __init__(self, word_lst: List[WordDef],  audio_file_path: str = None):
         self.word_lst: List[WordDef] = word_lst
         self.audio_file_path: str = audio_file_path
 
@@ -101,8 +103,10 @@ class MsgCreator:
         log.logger.debug(f"Msg for telegram user has been formed: {msg_for_user}")
         return msg_for_user
 
-    @staticmethod
-    def read_audio_file(audi_file_path: str) -> bytes:
-        with open(audi_file_path, 'rb') as audio_file:
-            audio_bytes: bytes = audio_file.read()
-        return audio_bytes
+    def read_audio_file(self) -> Optional[bytes]:
+        if self.audio_file_path is not None:
+            with open(self.audio_file_path, 'rb') as audio_file:
+                audio_bytes: bytes = audio_file.read()
+            return audio_bytes
+        else:
+            return None

@@ -15,7 +15,7 @@ Base = declarative_base()
 class DBUser(Base):
     __tablename__: str = 'users'
     user_id: Column = Column(String(200), primary_key=True)
-    username: Column = Column(String(100), nullable=False)
+    username: Column = Column(String(100), nullable=True)
     first_name: Column = Column(String(200), nullable=True)
     last_name: Column = Column(String(200), nullable=True)
     is_bot: Column = Column(Boolean, nullable=False)

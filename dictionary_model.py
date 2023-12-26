@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 
 
 @dataclass(init=True, repr=True, eq=True)
 class WordDef:
-    user_word: Union[str, None] = None
-    audio_http: Union[str, None] = None
-    part_of_speech: Union[str, None] = None
-    definition: Union[str, None] = None
-    example: Union[str, None] = None
+    user_word: Optional[str] = None
+    audio_http: Optional[str] = None
+    part_of_speech: Optional[str] = None
+    definition: Optional[str] = None
+    example: Optional[str] = None

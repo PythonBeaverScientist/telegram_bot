@@ -89,15 +89,19 @@ async def word_def_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     def_for = DefinitionFormatter(def_res)
     json_answer = await asyncio.create_task(def_for.format_definition_response())
     wrd_lst = def_for.edit_definition_json(json_answer)
-    get_audio_task = asyncio.create_task(def_req.get_audio(wrd_lst[0].audio_http))
-    audio_res = await get_audio_task
-    audio_file_path = await asyncio.create_task(def_for.load_audio_req(audio_res, en_word))
+    if wrd_lst[0].audio_http != '':
+        get_audio_task = asyncio.create_task(def_req.get_audio(wrd_lst[0].audio_http))
+        audio_res = await get_audio_task
+        audio_file_path = await asyncio.create_task(def_for.load_audio_req(audio_res, en_word))
+    else:
+        audio_file_path = None
     msg_creator: MsgCreator = MsgCreator(wrd_lst, audio_file_path)
     msg_for_user = msg_creator.create_msg_for_user(user_msg_model, db_engine)
     await def_req.close_session()
-    audio: bytes = msg_creator.read_audio_file(audio_file_path)
+    audio: bytes = msg_creator.read_audio_file()
     await update.message.reply_text(msg_for_user)
-    await update.message.reply_audio(audio=audio, title=f"{en_word}.mp3")
+    if audio is not None:
+        await update.message.reply_audio(audio=audio, title=f"{en_word}.mp3")
 
 
 # Responses
