@@ -31,15 +31,29 @@ BOT_USERNAME: Final[str] = bot_credentials['bot_username']
 # Commands
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     add_new_unique_user(update.message.from_user, db_engine)
-    await update.message.reply_text('Hello! Thanks for chatting with me. How can I help you?')
+    await update.message.reply_text('Hello! You may want to use /help command to discover my abilities.')
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('This will be some useful information in the future!')
+    msg_for_user: str = "This bot has 3 types of commands.\n" \
+                        "1. /get_id - command that has no arguments. You get your ID and ID " \
+                        "of the current chat.\n" \
+                        "2. /en_word <some word> - command that has one argument - some english word. " \
+                        "You get list of definitions for this word and audio file, that helps to understand " \
+                        "how to pronounce this word correctly. \n" \
+                        "3. /weather <current | forecast>, <city>, <quantity of days> - command has 2 or 3 arguments " \
+                        "that separated by comma. \n" \
+                        "If you want to find out weather at the current moment you need to use argument current " \
+                        "and place. \n" \
+                        "If want forecast for the next few days use argument forecast than place and quantity of " \
+                        "days since the current day and forward. Maximum range for this parameter - 14."
+    await update.message.reply_text(msg_for_user)
 
 
 async def get_id_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"Your id is: {update.message.from_user.id}")
+    msg_for_user: str = f"Your ID is: {update.message.from_user.id}\n" \
+                        f"Chat ID is: {update.message.chat_id}"
+    await update.message.reply_text(msg_for_user)
 
 
 async def custom_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -89,7 +103,7 @@ async def word_def_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Responses
 def handle_responses(user_response: str) -> str:
     user_response: str = user_response.lower()
-    if 'hello' or 'hey' or 'привет' in user_response:
+    if 'hello' or 'привет' in user_response:
         return 'Hello you there!'
     else:
         return 'Please explain yourself in more comprehensible expressions'
