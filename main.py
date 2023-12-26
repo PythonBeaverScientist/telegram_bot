@@ -1,6 +1,6 @@
 from typing import Final, Union
 import json
-import requests
+import aiohttp
 import asyncio
 
 from telegram import Update
@@ -50,12 +50,13 @@ async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     resp_hand: UserResponseHandler = UserResponseHandler(update.message)
     request = BaseRequest()
     func_args: Union[None, dict] = resp_hand.transform_msg_com()
-    add_users_request(update, db_engine, func_args)
+    db_user_request = add_users_request(update, db_engine, func_args)
     if func_args:
-        response: requests.Response = request.get_response(func_args.get('first_arg'),
-                                                           func_args.get('second_arg'), func_args.get('third_arg'))
+        response: aiohttp.ClientResponse = await asyncio.create_task(request.get_response(func_args.get('first_arg'),
+                                                           func_args.get('second_arg'), func_args.get('third_arg')))
         api_response_formatter = ResponseFormatter(response, func_args.get('first_arg'))
-        answer: str = api_response_formatter.answer
+        answer: str = await asyncio.create_task(api_response_formatter.get_ready_answer(db_user_request, db_engine))
+        await request.close_session()
         if isinstance(answer, str):
             await update.message.reply_text(answer)
         else:

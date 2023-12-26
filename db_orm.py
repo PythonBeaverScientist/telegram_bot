@@ -4,6 +4,7 @@ from telegram import User, Update
 from datetime import datetime
 from base_log import LoggerHand
 from dictionary_model import WordDef
+from weather_model import WeatherModel
 from db_client import DBClient
 
 log = LoggerHand(__name__, f"loggers/{__name__}.log")
@@ -107,6 +108,20 @@ class DBWeather(Base):
     def __str__(self):
         return f"The new weather state has been written into DB: " \
                f"{self.row_id}, {self.w_date}, {self.city}, {self.avg_temp}"
+
+
+def add_new_weather(db_user_request: UserRequest, engine, weather: WeatherModel):
+    db_weather: DBWeather = DBWeather(w_date=weather.w_date, city=weather.city, region=weather.region,
+                                      country=weather.country, condition=weather.condition,
+                                      avg_temp=weather.avg_temp, min_temp=weather.min_temp,
+                                      max_temp=weather.max_temp, wind_vel=weather.wind_vel,
+                                      user_msg_id=db_user_request.msg_id)
+    with Session(engine) as db_session:
+        db_session.add(db_weather)
+        db_session.commit()
+        log.logger.debug(f"New state of weather has benn written into DBWeather: {db_weather}")
+    return None
+
 #
 # if __name__ == '__main__':
 #     db_client: DBClient = DBClient()
